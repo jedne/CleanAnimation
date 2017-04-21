@@ -1,0 +1,15 @@
+<resources>
+    <!-- Default screen margins, per the Android Design guidelines. -->
+    <dimen name="clean_circle_view_height">400dp</dimen>
+    <dimen name="clean_circle_view_half_width">100dp</dimen>
+    <dimen name="clean_circle_view_inner_start_radius">10dp</dimen>
+    <dimen name="clean_circle_view_arc_border_start_width">55dp</dimen>
+    <dimen name="clean_circle_view_arc_border_end_width">6.5dp</dimen>
+    <dimen name="clean_circle_view_inner_border_width">2dp</dimen>
+    <dimen name="clean_circle_view_per_text_size">60sp</dimen>
+    <dimen name="clean_circle_view_sub_text_size">17sp</dimen>
+    <dimen name="clean_circle_view_sub_text_margin_top">17dp</dimen>
+    <dimen name="clean_circle_view_center_bg_margin">30dp</dimen>
+    <dimen name="clean_circle_view_rubbish_half_width">15dp</dimen>
+    <dimen name="clean_circle_view_rubbish_half_height">17.5dp</dimen>
+</resources>

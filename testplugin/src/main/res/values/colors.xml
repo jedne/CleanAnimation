@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="colorPrimary">#3F51B5</color>
+    <color name="colorPrimaryDark">#303F9F</color>
+    <color name="colorAccent">#FF4081</color>
+
+    <color name="clean_circle_view_star_bg_color">#D6000000</color>
+    <color name="clean_circle_view_inner_color">#00445A3F</color>
+    <color name="clean_circle_view_text_color">#6DE053</color>
+    <color name="clean_circle_view_sub_text_color">#DCDCDC</color>
+    <color name="clean_circle_view_arc_start_color">#5DD964</color>
+    <color name="clean_circle_view_arc_end_color">#A5F717</color>
+</resources>

@@ -3,8 +3,8 @@ package com.avazu.testplugin.TestProgressView;
 import android.animation.TimeInterpolator;
 import android.animation.ValueAnimator;
 import android.content.Context;
+import android.content.res.Resources;
 import android.graphics.Canvas;
-import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.RectF;
 import android.graphics.SweepGradient;
@@ -13,10 +13,13 @@ import android.support.annotation.Nullable;
 import android.text.TextPaint;
 import android.util.AttributeSet;
 import android.view.View;
+import android.view.animation.AccelerateDecelerateInterpolator;
 import android.view.animation.DecelerateInterpolator;
 import android.view.animation.OvershootInterpolator;
 
 import com.avazu.testplugin.R;
+
+import java.util.List;
 
 /**
  * Created by jeden on 2017/4/20.
@@ -24,7 +27,12 @@ import com.avazu.testplugin.R;
 
 public class MyProgressView extends View {
     private static final String TAG = MyProgressView.class.getSimpleName();
-    private int mTotalTime = 2000;
+    private static final int CIRCLE_DEGREE = 360;
+    private static final int mTotalTime = 2500;
+    private static final float CIRCLE_START = 270;
+    private static final float ARC_TOTAL_ANGLE = CIRCLE_DEGREE * 4.5f;
+    private static final float ARC_START_SWEEP = 40;
+
     private Paint mArcPaint;
     private Paint mCirclePaint;
     private TextPaint mTitlePaint;
@@ -32,33 +40,41 @@ public class MyProgressView extends View {
 
     private int mCenterX;
     private int mCenterY;
-    private int mHalfWidth = 300;
-    private float mCircleRadius = 80;
+    private int mHalfWidth;
+    private float mCircleRadius;
+    private float mCircleStartRadius;
     private float mTitleBottom;
     private float mTitleLeft;
     private float mSubLeft;
     private float mSubBottom;
+    private int mSubMarginTop;
+    private int mCenterBgMargin;
+    private float mArcBorderOffsetWidth;
+    private float mArcBorderEndWidth;
+    private float mArcBorderWidth;
 
-    private float mArcBorderWidth = 200;
-
-    private float mCircleBorderWidth = 5;
-    private float mStartAngle = 270;
-    private float mEndAngle = 40;
+    private float mCircleBorderWidth;
+    private float mStartAngle;
+    private float mSweepAngle;
     private RectF mRectF;
+    private int mArcColors[];
 
     private ValueAnimator mMainAnimator;
     private ValueAnimator mArcAnimator;
     private ValueAnimator mAngleAnimator;
     private ValueAnimator mCircleAnimator;
-    private ValueAnimator mColorAnimator;
-    private ValueAnimator mTitleAnimator;
-    private ValueAnimator mSubAnimator;
+    private ValueAnimator mTextAnimator;
     private boolean mInited = false;
 
     private String mTitle = "100%";
     private String mSubTitle = "Memory Usage";
     private Drawable mCenterBg;
     private boolean mCenterBgShow = false;
+    private Drawable mRubbishDrawable;
+
+    private List<Rubbish> mRubbishes;
+    private int mRubbishHalfW;
+    private int mRubbishHalfH;
 
     public MyProgressView(Context context) {
         super(context);
@@ -76,9 +92,39 @@ public class MyProgressView extends View {
     }
 
     private void initView(Context context) {
+
+        Resources rs = context.getResources();
+        mHalfWidth = rs.getDimensionPixelSize(R.dimen.clean_circle_view_half_width);
+        mCircleStartRadius = rs.getDimensionPixelSize(R.dimen.clean_circle_view_inner_start_radius);
+        mArcBorderWidth = rs.getDimensionPixelSize(R.dimen.clean_circle_view_arc_border_start_width);
+        mArcBorderEndWidth = rs.getDimensionPixelSize(R.dimen.clean_circle_view_arc_border_end_width);
+        mCircleBorderWidth = rs.getDimensionPixelSize(R.dimen.clean_circle_view_inner_border_width);
+        mSubMarginTop = rs.getDimensionPixelSize(R.dimen.clean_circle_view_sub_text_margin_top);
+        mCenterBgMargin = rs.getDimensionPixelSize(R.dimen.clean_circle_view_center_bg_margin);
+        int titleSize = rs.getDimensionPixelSize(R.dimen.clean_circle_view_per_text_size);
+        int subSize = rs.getDimensionPixelSize(R.dimen.clean_circle_view_sub_text_size);
+        mRubbishHalfW = rs.getDimensionPixelSize(R.dimen.clean_circle_view_rubbish_half_width);
+        mRubbishHalfH = rs.getDimensionPixelSize(R.dimen.clean_circle_view_rubbish_half_height);
+
+        int titleColor = rs.getColor(R.color.clean_circle_view_text_color);
+        int subColor = rs.getColor(R.color.clean_circle_view_sub_text_color);
+        int arcStartColor = rs.getColor(R.color.clean_circle_view_arc_start_color);
+        int arcEndColor = rs.getColor(R.color.clean_circle_view_arc_end_color);
+        int innerColor = rs.getColor(R.color.clean_circle_view_inner_color);
+
+        mArcColors = new int[3];
+        mArcColors[0] = arcStartColor;
+        mArcColors[1] = arcEndColor;
+        mArcColors[2] = arcStartColor;
+
+        mArcBorderOffsetWidth = mArcBorderWidth - mArcBorderEndWidth;
+        mCircleRadius = mCircleStartRadius;
+        mStartAngle = CIRCLE_START;
+        mSweepAngle = ARC_START_SWEEP;
+
         mArcPaint = new Paint();
 //        mArcPaint.setColor(Color.GREEN);
-        mArcPaint.setAlpha(20);
+        mArcPaint.setAlpha(0);
         mArcPaint.setAntiAlias(true);
         mArcPaint.setStyle(Paint.Style.STROKE);
         mArcPaint.setStrokeWidth(mArcBorderWidth);
@@ -86,22 +132,25 @@ public class MyProgressView extends View {
         mCirclePaint = new Paint();
         mCirclePaint.setAntiAlias(true);
         mCirclePaint.setAlpha(0);
-        mCirclePaint.setColor(Color.parseColor("#00445A3F"));
+        mCirclePaint.setColor(innerColor);
         mCirclePaint.setStyle(Paint.Style.STROKE);
         mCirclePaint.setStrokeWidth(mCircleBorderWidth);
 
         mTitlePaint = new TextPaint(Paint.ANTI_ALIAS_FLAG);
-        mTitlePaint.setColor(Color.parseColor("#6DE053"));
-        mTitlePaint.setTextSize(180);
+        mTitlePaint.setColor(titleColor);
+        mTitlePaint.setTextSize(titleSize);
         mTitlePaint.setAlpha(0);
         mTitlePaint.setFakeBoldText(true);
 
         mSubPaint = new TextPaint(Paint.ANTI_ALIAS_FLAG);
-        mSubPaint.setColor(Color.parseColor("#DCDCDC"));
-        mSubPaint.setTextSize(50);
+        mSubPaint.setColor(subColor);
+        mSubPaint.setTextSize(subSize);
         mSubPaint.setAlpha(0);
 
-        mCenterBg = context.getResources().getDrawable(R.drawable.progress_center_light_bg);
+        mCenterBg = rs.getDrawable(R.drawable.progress_center_light_bg);
+        mRubbishDrawable = rs.getDrawable(R.drawable.clean_rubbish);
+
+        mRectF = new RectF();
     }
 
     @Override
@@ -114,22 +163,19 @@ public class MyProgressView extends View {
         super.onLayout(changed, left, top, right, bottom);
         mCenterX = getMeasuredWidth() / 2;
         mCenterY = getMeasuredHeight() / 2;
-        mRectF = new RectF(mCenterX - mHalfWidth, mCenterY - mHalfWidth, mCenterX + mHalfWidth, mCenterY + mHalfWidth);
+        float temp = mHalfWidth - mArcBorderOffsetWidth;
+        mRectF.set(mCenterX - temp, mCenterY - temp, mCenterX + temp, mCenterY + temp);
 
         mTitleLeft = mCenterX - mTitlePaint.measureText(mTitle) / 2;
         mSubLeft = mCenterX - mSubPaint.measureText(mSubTitle) / 2;
         mTitleBottom = mCenterY - (mTitlePaint.descent() + mTitlePaint.ascent()) / 2;
-        mSubBottom = mTitleBottom - (mSubPaint.descent() + mSubPaint.ascent()) + 50;
+        mSubBottom = mTitleBottom - (mSubPaint.descent() + mSubPaint.ascent()) + mSubMarginTop;
 
-        int colors[] = new int[3];
-        colors[0] = Color.parseColor("#5DD964");
-        colors[1] = Color.parseColor("#A5F717");
-        colors[2] = Color.parseColor("#5DD964");
-
-        SweepGradient lg = new SweepGradient(mCenterX, mCenterY, colors, new float[]{0.0f, 0.5f, 1.0f});
+        SweepGradient lg = new SweepGradient(mCenterX, mCenterY, mArcColors, new float[]{0.0f, 0.5f, 1.0f});
         mArcPaint.setShader(lg);
 
-        mCenterBg.setBounds(mCenterX - mHalfWidth - 90, mCenterY - mHalfWidth - 90, mCenterX + mHalfWidth + 90, mCenterY + mHalfWidth + 90);
+        mCenterBg.setBounds(mCenterX - mHalfWidth - mCenterBgMargin, mCenterY - mHalfWidth - mCenterBgMargin,
+                mCenterX + mHalfWidth + mCenterBgMargin, mCenterY + mHalfWidth + mCenterBgMargin);
     }
 
     @Override
@@ -137,20 +183,38 @@ public class MyProgressView extends View {
         super.onDraw(canvas);
 
         canvas.drawCircle(mCenterX, mCenterY, mCircleRadius, mCirclePaint);
-        if(mEndAngle == 360) {
+        if(mSweepAngle == CIRCLE_DEGREE) {
             canvas.save();
             canvas.rotate(mStartAngle, mCenterX, mCenterY);
-            canvas.drawArc(mRectF, mStartAngle, mEndAngle, false, mArcPaint);
+            canvas.drawArc(mRectF, mStartAngle, mSweepAngle, false, mArcPaint);
             canvas.restore();
         }
         else {
-            canvas.drawArc(mRectF, mStartAngle, mEndAngle, false, mArcPaint);
+            canvas.drawArc(mRectF, mStartAngle, mSweepAngle, false, mArcPaint);
         }
         canvas.drawText(mTitle, mTitleLeft, mTitleBottom, mTitlePaint);
         canvas.drawText(mSubTitle, mSubLeft, mSubBottom, mSubPaint);
 
         if(mCenterBgShow) {
             mCenterBg.draw(canvas);
+        }
+    }
+
+    private void drawRubbish(Canvas canvas) {
+        int size = mRubbishes.size();
+
+        if(size <= 0) {
+            return;
+        }
+
+        for(int i = 0; i < size; i++) {
+            Rubbish rb = mRubbishes.get(i);
+            canvas.save();
+            canvas.rotate(rb.rotateAngle, rb.x, rb.y);
+            mRubbishDrawable.setBounds((int)rb.x - mRubbishHalfW, (int)rb.y - mRubbishHalfH,
+                    (int)rb.x + mRubbishHalfW, (int)rb.y + mRubbishHalfH);
+            mRubbishDrawable.draw(canvas);
+            canvas.restore();
         }
     }
 
@@ -166,6 +230,18 @@ public class MyProgressView extends View {
         stopAnimation();
     }
 
+    public void setTitle(String title) {
+        mTitle = title;
+    }
+
+    public void setSubTitle(String subTitle) {
+        mSubTitle = subTitle;
+    }
+
+    public void setRubbishes(List<Rubbish> rubbishes) {
+        mRubbishes = rubbishes;
+    }
+
     public void startAnimation() {
         if(!mInited) {
             initAnimation();
@@ -175,9 +251,7 @@ public class MyProgressView extends View {
         mAngleAnimator.start();
         mArcAnimator.start();
         mCircleAnimator.start();
-        mTitleAnimator.start();
-        mSubAnimator.start();
-        mColorAnimator.start();
+        mTextAnimator.start();
     }
 
     public void stopAnimation() {
@@ -186,9 +260,7 @@ public class MyProgressView extends View {
             mAngleAnimator.cancel();
             mArcAnimator.cancel();
             mCircleAnimator.cancel();
-            mTitleAnimator.cancel();
-            mSubAnimator.cancel();
-            mColorAnimator.cancel();
+            mTextAnimator.cancel();
             mInited = false;
         }
     }
@@ -199,22 +271,23 @@ public class MyProgressView extends View {
             @Override
             public void onAnimationUpdate(ValueAnimator animation) {
                 float value = (float) animation.getAnimatedValue();
-                mStartAngle = 270 + value * 4 * 360;
-                mStartAngle = mStartAngle % 360;
+                mStartAngle = CIRCLE_START + value * ARC_TOTAL_ANGLE;
+                mStartAngle = mStartAngle % CIRCLE_DEGREE;
                 invalidate();
             }
         });
 
-        mAngleAnimator = generateAnimator(0.0f, 1.0f, mTotalTime / 2, 500, null, new ValueAnimator.AnimatorUpdateListener() {
+        mAngleAnimator = generateAnimator(0.0f, 1.0f, mTotalTime / 2, 500, new AccelerateDecelerateInterpolator(), new ValueAnimator.AnimatorUpdateListener() {
             @Override
             public void onAnimationUpdate(ValueAnimator animation) {
                 float value = (float) animation.getAnimatedValue();
-                mEndAngle = 40 + value * 320;
+                mSweepAngle = ARC_START_SWEEP + value * (CIRCLE_DEGREE - ARC_START_SWEEP);
                 mArcPaint.setAlpha((int)(20.4 + value * 171));
                 if(value > 0.9) {
                     mCenterBg.setAlpha((int)((value - 0.9) * 2550));
                     mCenterBgShow = true;
                 }
+
             }
         });
 
@@ -223,8 +296,12 @@ public class MyProgressView extends View {
             public void onAnimationUpdate(ValueAnimator animation) {
                 float value = (float) animation.getAnimatedValue();
 
-                mArcBorderWidth = 180 * value + 20;
+                mArcBorderWidth = mArcBorderOffsetWidth * value + mArcBorderEndWidth;
                 mArcPaint.setStrokeWidth(mArcBorderWidth);
+
+                float temp = mHalfWidth - (mArcBorderWidth - mArcBorderEndWidth);
+                mRectF.set(mCenterX - temp, mCenterY - temp,
+                        mCenterX + temp, mCenterY + temp);
             }
         });
 
@@ -232,7 +309,7 @@ public class MyProgressView extends View {
             @Override
             public void onAnimationUpdate(ValueAnimator animation) {
                 float value = (float) animation.getAnimatedValue();
-                mCircleRadius = 80 + 220 * value;
+                mCircleRadius = mCircleStartRadius + (mHalfWidth - mCircleStartRadius) * value;
                 if(value < 1) {
                     mCirclePaint.setAlpha((int)(value * 140));
                 } else {
@@ -241,39 +318,25 @@ public class MyProgressView extends View {
             }
         });
 
-        mTitleAnimator = generateAnimator(0.0f, 1.0f, mTotalTime, 500, null, new ValueAnimator.AnimatorUpdateListener() {
+        mTextAnimator = generateAnimator(0.0f, 1.0f, mTotalTime, 500, null, new ValueAnimator.AnimatorUpdateListener() {
             @Override
             public void onAnimationUpdate(ValueAnimator animation) {
                 float value = (float) animation.getAnimatedValue();
 
                 if(value > 0.2 && value < 0.4) {
                     if(value <= 0.3) {
-                        mTitleBottom -= 3 * value;
+                        mTitleBottom -= 4 * value;
                     }
                     mTitlePaint.setAlpha((int)((value - 0.2) / 2 * 2550));
                 }
-            }
-        });
-
-        mSubAnimator = generateAnimator(0.0f, 1.0f, mTotalTime, 500, null, new ValueAnimator.AnimatorUpdateListener() {
-            @Override
-            public void onAnimationUpdate(ValueAnimator animation) {
-                float value = (float) animation.getAnimatedValue();
 
                 if(value > 0.1 && value < 0.3) {
                     mSubPaint.setAlpha((int)((value - 0.1) / 2 * 2550));
                 }
 
                 if(value > 0.2 && value <= 0.3) {
-                    mSubBottom -= 3 * value;
+                    mSubBottom -= 4 * value;
                 }
-            }
-        });
-
-        mColorAnimator = generateAnimator(0.0f, 1.0f, mTotalTime - 100, 600, null, new ValueAnimator.AnimatorUpdateListener() {
-            @Override
-            public void onAnimationUpdate(ValueAnimator animation) {
-
             }
         });
 

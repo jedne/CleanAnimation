@@ -8,9 +8,12 @@ import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.RectF;
 import android.graphics.SweepGradient;
+import android.graphics.drawable.Drawable;
 import android.support.annotation.Nullable;
 import android.util.AttributeSet;
 import android.view.View;
+
+import com.avazu.testplugin.R;
 
 /**
  * Created by jeden on 2017/4/21.
@@ -23,28 +26,31 @@ public class TestCircle extends View {
     private int mCenterY;
     private RectF mRectF;
     private float mStartAngle = 270;
+    private Drawable mDrawable;
 
     public TestCircle(Context context) {
         super(context);
-        initView();
+        initView(context);
     }
 
     public TestCircle(Context context, @Nullable AttributeSet attrs) {
         super(context, attrs);
-        initView();
+        initView(context);
     }
 
     public TestCircle(Context context, @Nullable AttributeSet attrs, int defStyleAttr) {
         super(context, attrs, defStyleAttr);
-        initView();
+        initView(context);
     }
 
-    private void initView() {
+    private void initView(Context context) {
         mArcPaint = new Paint();
         mArcPaint.setAlpha(140);
         mArcPaint.setAntiAlias(true);
         mArcPaint.setStyle(Paint.Style.STROKE);
         mArcPaint.setStrokeWidth(30);
+
+        mDrawable = context.getResources().getDrawable(R.drawable.clean_rubbish);
     }
 
     @Override
@@ -76,6 +82,16 @@ public class TestCircle extends View {
         canvas.rotate(mStartAngle, mCenterX, mCenterY);
         canvas.drawArc(mRectF, mStartAngle, 360f, false, mArcPaint);
         canvas.restore();
+
+        for(int i = 0; i < 5; i++) {
+            int centerX = 80 * i;
+            int centerY = 60 * i;
+            canvas.save();
+            canvas.rotate(60 * i, centerX, centerY);
+            mDrawable.setBounds(centerX - 20, centerY - 25, centerX + 20, centerY + 25);
+            mDrawable.draw(canvas);
+            canvas.restore();
+        }
     }
 
     @Override

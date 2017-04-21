@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="fill_parent"
+    android:layout_height="fill_parent"
+    android:background="#00000000">
+    <com.avazu.testplugin.TestFanMenu.menu.MyCustomBackgroundView
+        android:layout_width="fill_parent"
+        android:layout_height="fill_parent"
+        android:background="#80000000"/>
+    <com.avazu.testplugin.TestFanMenu.menu.MyCustomMenuView
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom|center|right">
+        <com.avazu.testplugin.TestFanMenu.menu.MyCustomMenuLayout
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content">
+
+        </com.avazu.testplugin.TestFanMenu.menu.MyCustomMenuLayout>
+        <com.avazu.testplugin.TestFanMenu.menu.MyCustomMenuLayout
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content">
+
+        </com.avazu.testplugin.TestFanMenu.menu.MyCustomMenuLayout>
+        <com.avazu.testplugin.TestFanMenu.menu.MyCustomMenuLayout
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content">
+
+        </com.avazu.testplugin.TestFanMenu.menu.MyCustomMenuLayout>
+    </com.avazu.testplugin.TestFanMenu.menu.MyCustomMenuView>
+    <com.avazu.testplugin.TestFanMenu.menu.MyCustomSelectTextLayout
+        android:layout_width="fill_parent"
+        android:layout_height="fill_parent"
+        android:layout_gravity="bottom|center|right"
+        android:background="#00000000">
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textSize="15.0sp"
+            android:textColor="#ffffffff"
+            android:maxWidth="90.0dip"
+            android:text="最近使用"
+            android:maxLines="1" />
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textSize="15.0sp"
+            android:textColor="#ffffffff"
+            android:maxWidth="90.0dip"
+            android:text="快捷开关"
+            android:maxLines="1" />
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textSize="15.0sp"
+            android:textColor="#ffffffff"
+            android:maxWidth="90.0dip"
+            android:text="常用应用"
+            android:maxLines="1" />
+    </com.avazu.testplugin.TestFanMenu.menu.MyCustomSelectTextLayout>
+    <com.avazu.testplugin.TestFanMenu.menu.MyCustomCenterView
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom|center|right"/>
+</FrameLayout>
