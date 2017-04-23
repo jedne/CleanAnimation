@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/clean_circle_view_star_bg_color">
+    <ImageView
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="@drawable/progress_bg"/>
+    <com.jeden.clean.MyProgressView
+        android:id="@+id/clean_progress_view"
+        android:layout_width="match_parent"
+        android:layout_height="@dimen/clean_circle_view_height"
+        android:background="@null"/>
+    <com.jeden.clean.TestCircle
+        android:layout_width="match_parent"
+        android:layout_height="200dp"
+        android:visibility="gone"
+        android:layout_alignParentBottom="true"/>
+</RelativeLayout>
