@@ -9,22 +9,32 @@ import java.util.Random;
  */
 
 public class RubbishFactory {
-    public Rubbish generateRubbish(int width, int height) {
+    public Rubbish generateRubbish(int index, int width, int height) {
         Rubbish rb = new Rubbish();
         Random random = new Random();
-        int randomType = random.nextInt(2);
-        rb.x = 0;
-        if(randomType == 1) {
-            rb.x = width;
+        int randomType = random.nextInt(4);
+        rb.x = -60;
+        if(randomType == 0) {
+            rb.x = 1200;
         }
 
-        rb.y = random.nextInt(height / 2) + height / 4;
+        rb.y = random.nextInt(height);
 
-        rb.tension = (random.nextInt(10) / 10.0f) + 1;
+        rb.tension = (random.nextInt(5) / 10.0f) + 1;
 
         rb.rotateAngle = random.nextInt(360);
 
-        rb.alpha = random.nextInt(55) + 20;
+        rb.alpha = random.nextInt(125) + 50;
+
+        int temp = index % 4 + 1;
+        rb.startTime = random.nextInt(5) * 50 + temp * 500;
+
+        rb.isRecycled = false;
+
+        rb.locationAngle = 0;
+
+        Log.v("jeden", "RubbishFactory rb x:" + rb.x + " y:" + rb.y + " tension:" + rb.tension + " rotateAngle:" + rb.rotateAngle
+        + " alpha:" + rb.alpha + " startTime:" + rb.startTime);
         return rb;
     }
 
@@ -36,7 +46,7 @@ public class RubbishFactory {
 
         List<Rubbish> lists = new ArrayList<>();
         for (int i = 0; i < size; i++) {
-            lists.add(generateRubbish(width, height));
+            lists.add(generateRubbish(i, width, height));
         }
 
         return lists;

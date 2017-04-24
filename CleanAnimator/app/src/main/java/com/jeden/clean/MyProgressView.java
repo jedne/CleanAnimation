@@ -4,10 +4,13 @@ import android.animation.TimeInterpolator;
 import android.animation.ValueAnimator;
 import android.content.Context;
 import android.content.res.Resources;
+import android.graphics.Bitmap;
 import android.graphics.Canvas;
+import android.graphics.Matrix;
 import android.graphics.Paint;
 import android.graphics.RectF;
 import android.graphics.SweepGradient;
+import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
 import android.support.annotation.Nullable;
 import android.text.TextPaint;
@@ -19,6 +22,7 @@ import android.view.animation.OvershootInterpolator;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Random;
 
 /**
  * Created by jeden on 2017/4/20.
@@ -31,11 +35,14 @@ public class MyProgressView extends View {
     private static final float CIRCLE_START = 270;
     private static final float ARC_TOTAL_ANGLE = CIRCLE_DEGREE * 4.5f;
     private static final float ARC_START_SWEEP = 40;
+    private static final float RUBBISH_SPEED = 500;
+    private static final float RUBBISH_ROTATE = 500;
 
     private Paint mArcPaint;
     private Paint mCirclePaint;
     private TextPaint mTitlePaint;
     private TextPaint mSubPaint;
+    private Paint mBitmapPaint;
 
     private int mCenterX;
     private int mCenterY;
@@ -63,16 +70,15 @@ public class MyProgressView extends View {
     private ValueAnimator mAngleAnimator;
     private ValueAnimator mCircleAnimator;
     private ValueAnimator mTextAnimator;
-    private ValueAnimator mRubbishAnimator;
     private boolean mInited = false;
 
     private String mTitle = "100%";
     private String mSubTitle = "Memory Usage";
     private Drawable mCenterBg;
     private boolean mCenterBgShow = false;
-    private Drawable mRubbishDrawable;
+    private Bitmap mRubbishBitmap;
 
-    private List<Rubbish> mRubbishes = new ArrayList<>();
+    private List<Rubbish> mRubbishes;
     private int mRubbishHalfW;
     private int mRubbishHalfH;
 
@@ -147,13 +153,16 @@ public class MyProgressView extends View {
         mSubPaint.setTextSize(subSize);
         mSubPaint.setAlpha(0);
 
+        mBitmapPaint = new Paint();
+        mBitmapPaint.setAntiAlias(true);
+        mBitmapPaint.setDither(true);
+        mBitmapPaint.setFilterBitmap(true);
+
         mCenterBg = rs.getDrawable(R.drawable.progress_center_light_bg);
-        mRubbishDrawable = rs.getDrawable(R.drawable.clean_rubbish);
-        mRubbishDrawable.setAlpha(0);
+        mRubbishBitmap = ((BitmapDrawable)rs.getDrawable(R.drawable.clean_rubbish)).getBitmap();
 
         mRectF = new RectF();
-
-        mRubbishes = new RubbishFactory().generateRubbishs(1, 800, 800);
+        mRubbishes = new RubbishFactory().generateRubbishs(10, 800, 800);
     }
 
     @Override
@@ -211,21 +220,57 @@ public class MyProgressView extends View {
         if(size <= 0) {
             return;
         }
+        long currentTime = System.currentTimeMillis();
 
         for(int i = 0; i < size; i++) {
             Rubbish rb = mRubbishes.get(i);
+            getRubbishLocation(rb, currentTime);
             if(rb.isRecycled) {
-                break;
+                continue;
             }
 
             canvas.save();
-            canvas.rotate(rb.rotateAngle, rb.x, rb.y);
-            mRubbishDrawable.setAlpha(rb.alpha);
-            mRubbishDrawable.setBounds((int)rb.x - mRubbishHalfW, (int)rb.y - mRubbishHalfH,
-                    (int)rb.x + mRubbishHalfW, (int)rb.y + mRubbishHalfH);
-            mRubbishDrawable.draw(canvas);
+            canvas.rotate(rb.locationAngle, mCenterX, mCenterY);
+
+            Matrix matrix = new Matrix();
+            matrix.postTranslate(rb.x, rb.y);
+            matrix.postRotate(rb.rotateAngle, rb.x, rb.y);
+            mBitmapPaint.setAlpha(rb.alpha);
+            canvas.drawBitmap(mRubbishBitmap, matrix, mBitmapPaint);
+
             canvas.restore();
         }
+    }
+
+    public void getRubbishLocation(Rubbish rb, long currentTime) {
+        if(rb.startTime < mTotalTime) {
+            rb.startTime += currentTime;
+        }
+
+        long intervalTime = currentTime - rb.startTime;
+        if(intervalTime < 0) {
+            return;
+        }
+
+        float distance = getTwoPointDistance(mCenterX, mCenterY, rb.x, rb.y);
+        if(distance < mHalfWidth) {
+            rb.isRecycled = new Random().nextInt(2) == 0;
+
+            if(distance < mCircleStartRadius) {
+                rb.isRecycled = true;
+            }
+        }
+        if(rb.isRecycled || intervalTime > RUBBISH_SPEED) {
+            rb.isRecycled = true;
+            return;
+        }
+
+        float interval = intervalTime / RUBBISH_SPEED;
+        interval = (float) Math.pow(interval, 1);
+        rb.x += interval * (mCenterX - rb.x);
+        rb.y += interval * (mCenterY - rb.y);
+        rb.locationAngle = 450 * intervalTime / RUBBISH_SPEED;
+        rb.rotateAngle += 360 * intervalTime / RUBBISH_SPEED;
     }
 
     @Override
@@ -262,7 +307,6 @@ public class MyProgressView extends View {
         mArcAnimator.start();
         mCircleAnimator.start();
         mTextAnimator.start();
-        mRubbishAnimator.start();
     }
 
     public void stopAnimation() {
@@ -272,7 +316,6 @@ public class MyProgressView extends View {
             mArcAnimator.cancel();
             mCircleAnimator.cancel();
             mTextAnimator.cancel();
-            mRubbishAnimator.cancel();
             mInited = false;
         }
     }
@@ -351,32 +394,6 @@ public class MyProgressView extends View {
                 }
             }
         });
-
-        mRubbishAnimator = generateAnimator(0.0f, 1.0f, mTotalTime, 500, null, new ValueAnimator.AnimatorUpdateListener() {
-            private float mLast = 0;
-            @Override
-            public void onAnimationUpdate(ValueAnimator animation) {
-                float value = (float) animation.getAnimatedValue();
-                float offset = value - mLast;
-                int size = mRubbishes.size();
-
-                if(size <= 0) {
-                    return;
-                }
-
-                for(int i = 0; i < size; i++) {
-                    Rubbish rb = mRubbishes.get(i);
-                    float point[] = new float[2];
-                    calculatePoint(rb.x, rb.y, point, CIRCLE_DEGREE * offset, 500 * offset);
-                    rb.x = point[0];
-                    rb.y = point[1];
-                    rb.rotateAngle = rb.rotateAngle + (int)(CIRCLE_DEGREE * offset);
-                }
-
-                mLast = value;
-            }
-        });
-
         mInited = true;
 
     }
@@ -391,25 +408,8 @@ public class MyProgressView extends View {
         return va;
     }
 
-    public void calculatePoint(float fx, float fy, float to[], float degree, float offset) {
-        float tx, ty;
-        float distance = getTwoPointDistance(fx, fy, mCenterX, mCenterY);
-        distance -= offset;
-
-        double tempDegree = getDegreeByPoint(fy - mCenterY, mCenterX - fx) + degree;
-        ty = (float) Math.sin(tempDegree) * distance + mCenterY;
-        tx = mCenterX - (float) Math.cos(tempDegree) * distance;
-        to[0] = tx;
-        to[1] = ty;
-    }
-
     public static float getTwoPointDistance(float x1, float y1, float x2, float y2)
     {
         return  (float) Math.sqrt(Math.pow(Math.abs(x1 - x2), 2) + Math.pow(Math.abs(y1 - y2), 2));
-    }
-
-    public static double getDegreeByPoint(float x, float y)
-    {
-        return Math.toDegrees(Math.atan(x / y));
     }
 }

@@ -9,5 +9,7 @@ public class Rubbish {
     public float tension;
     public int rotateAngle;
     public int alpha;
+    public long startTime;
     public boolean isRecycled;
+    public float locationAngle;
 }
