@@ -79,8 +79,6 @@ public class MyProgressView extends View {
     private Bitmap mRubbishBitmap;
 
     private List<Rubbish> mRubbishes;
-    private int mRubbishHalfW;
-    private int mRubbishHalfH;
 
     public MyProgressView(Context context) {
         super(context);
@@ -109,8 +107,6 @@ public class MyProgressView extends View {
         mCenterBgMargin = rs.getDimensionPixelSize(R.dimen.clean_circle_view_center_bg_margin);
         int titleSize = rs.getDimensionPixelSize(R.dimen.clean_circle_view_per_text_size);
         int subSize = rs.getDimensionPixelSize(R.dimen.clean_circle_view_sub_text_size);
-        mRubbishHalfW = rs.getDimensionPixelSize(R.dimen.clean_circle_view_rubbish_half_width);
-        mRubbishHalfH = rs.getDimensionPixelSize(R.dimen.clean_circle_view_rubbish_half_height);
 
         int titleColor = rs.getColor(R.color.clean_circle_view_text_color);
         int subColor = rs.getColor(R.color.clean_circle_view_sub_text_color);
